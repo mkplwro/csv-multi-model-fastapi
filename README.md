@@ -1,6 +1,6 @@
 # Subscription Customer Analytics: Spend Prediction & Churn Classification
 
-Two end-to-end supervised learning projects built on a shared subscription-customer dataset: a **regression** model that predicts monthly spend, and a **classification** model that predicts customer churn.
+Two end-to-end supervised learning projects built on a shared subscription-customer dataset: a **regression** model that predicts monthly spend and a **classification** model that predicts customer churn.
 
 ## Dataset
 
