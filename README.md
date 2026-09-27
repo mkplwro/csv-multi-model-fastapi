@@ -1,142 +1,35 @@
-# Customer Analytics & Behavior Prediction Suite
+# Subscription Customer Analytics: Spend Prediction & Churn Classification
 
+Two end-to-end supervised learning projects built on a shared subscription-customer dataset: a **regression** model that predicts monthly spend, and a **classification** model that predicts customer churn.
 
----
+## Dataset
 
-##This project presents an end-to-end Machine Learning ecosystem focused on subscription-based customer analytics using a synthetic dataset containing realistic data quality challenges. The portfolio combines two complementary predictive modeling tasks designed to solve critical business problems:
+`data/subscription_customers_dirty.csv` — ~10,000 synthetic subscription customers (demographics, usage, plan, and billing attributes). The data was generated with intentionally embedded data-quality issues (invalid values, sentinel codes, outliers, missing data) to practice realistic, production-style data cleaning rather than working with a pre-cleaned dataset.
 
-- Customer Churn Prediction (Classification): Identifying customers at risk of leaving the service to enable proactive retention interventions.
+## Project 1 — Monthly Spend Prediction (Regression)
+[`regression_model.ipynb`](./regression_model.ipynb)
 
-- Customer Monthly Spend Prediction (Regression): Estimating monthly revenue per customer (monthly_spend_pln) to pinpoint high-value accounts and analyze financial drivers.
+- **Goal:** predict a customer's monthly spend (PLN) from account and usage attributes.
+- **Approach:** systematic data cleaning (outlier and sentinel-value detection, with reasoning for each decision); six candidate models (Linear, Ridge, Lasso, Elastic Net, Decision Tree, XGBoost) compared via cross-validation and tuned with `GridSearchCV` / Optuna; final model chosen by CV performance rather than complexity.
+- **Result:** a regularized linear model (Lasso) generalizes best — **MAE 11.43 PLN, R² 0.86** on held-out test data, a ~65% lower error than a median-prediction baseline (MAE 32.40 PLN). Subscription plan and tenure are the strongest drivers of spend.
+- **Notable finding:** a small group of customers with genuine zero spend accounts for a disproportionate share of total error; their profile is otherwise unremarkable, so this is reported as a clear model limitation rather than smoothed over.
 
-Both sub-projects focus on establishing clean data pipelines, robust cross-validation schemes, strict data leakage prevention, and critical evaluation of model behavior under real-world data noise.
+## Project 2 — Churn Prediction (Classification)
+[`classification_model.ipynb`](./classification_model.ipynb)
 
----
+- **Goal:** predict whether a customer will churn, prioritizing catching at-risk customers over avoiding false alarms.
+- **Approach:** stratified train/test split and cross-validation to handle ~81/19 class imbalance; eight models compared (including a dummy baseline) using Recall and F2 rather than accuracy; the leading model tuned with `RandomizedSearchCV`, with the classification threshold itself optimized for F2 rather than left at the default 0.5.
+- **Result:** a tuned Logistic Regression model with an optimized decision threshold reaches **Recall 0.85, F2 0.59, ROC-AUC 0.75** on held-out test data, against a no-skill baseline of 0 recall. Login activity, satisfaction score, and tenure are the strongest predictors.
+- **Notable finding:** the model's missed churners (false negatives) look like loyal, satisfied, long-tenured customers — a concrete blind spot called out for business stakeholders rather than hidden behind an aggregate metric.
 
-##Business Problem & Objectives
+## Skills demonstrated
 
-In subscription business models, optimizing Customer Lifetime Value requires addressing both customer retention and spend maximization:
+Data cleaning & quality assessment · EDA & visualization · `scikit-learn` pipelines (`ColumnTransformer`, no leakage between train/test) · cross-validation & model selection · hyperparameter tuning (`GridSearchCV`, `RandomizedSearchCV`, Optuna) · imbalanced classification & threshold optimization · baseline comparison · error analysis & business interpretation
 
-Churn Classification: Failing to detect a churning customer (False Negative) is significantly more costly than a false alarm (False Positive). Therefore, the modeling strategy prioritizes Recall and the F2 score over raw Accuracy.
-
-Spend Regression: Understanding expected monthly spending helps prioritize key accounts and optimize marketing channels. The goal is to build reliable regression baselines and evaluate their performance consistency.
-
----
-
-## Dataset & Data Quality Management
-
-The dataset consists of approximately 10,000 customer records featuring demographic details, subscription tiers, support interaction counts, satisfaction scores, auto-renewal flags, and financial statistics.
-
-To simulate real-world conditions, the raw data contains intentional anomalies:
-
-- Dirty Numerical Values: Negative incomes, invalid ages, and sentinel numbers (e.g., 999999) were replaced with NaN and processed via imputation.
-
-- Categorical Inconsistencies: Standardized via whitespace stripping and lowercase conversion.
-
-- Duplicates & Leakage Risk: Customer ID duplicates were evaluated to distinguish lifecycle updates from redundant rows. Standard identifier columns were dropped to prevent overfitting.
-
-- Target Anomalies: Extreme monthly spend outliers (e.g., 2500 PLN) were kept deliberately to analyze model robustness rather than masking real edge cases.
----
-
-## Machine Learning Workflow
-
-Both pipelines follow a strict, leakage-free structure utilizing scikit-learn Pipelines:
-
-- Data Cleaning & Preprocessing: Numerical features use median imputation and scaling; categorical features undergo imputation and one-hot encoding.
-
-- Feature Engineering:
-Classification: satisfaction_per_tenure = satisfaction_score / (tenure_months + 1)
-
-Regression: income_per_tenure = monthly_income_pln / (tenure_months + 1)
-
-- Model Selection & Tuning:
-Classification: Evaluation of tree-based models and classifiers optimized via stratified cross-validation and custom decision thresholds.
-
-Regression: Comparison of Linear, Ridge, Lasso, ElasticNet, Decision Tree, and XGBoost models using GridSearchCV and Optuna. Regularized models (Lasso) demonstrated superior generalization compared to overly complex architectures.
-
----
-
-## Key Insights & Validation Findings
-
-Metric Realism over High Scores: In the regression task, a single holdout test set yielded an optimistic $R^2$ of 0.87. However, 10-fold Repeated Cross-Validation revealed a mean $R^2$ of 0.57 and a wide RMSE spread (mean: 46.51, median: 15.36). This confirmed that extreme spend values in specific validation folds heavily skew evaluation—highlighting why single train-test splits can be misleading.
-
-Class Imbalance & Threshold Tuning: Strategic threshold adjustment in churn classification significantly improved retention detection (F2/Recall) over standard default cutoff boundaries.
----
-
-
-## Production MLOps layer
-
-The production API now serves **two independent models** from the same customer payload:
-
-- `churn_model.joblib` — binary classification of churn risk.
-- `spend_model.joblib` — regression of `monthly_spend_pln`.
-
-The regression model is the **Lasso model with `alpha=0.2` selected by GridSearchCV in `notebooks/regression_model.ipynb`**. The production training code keeps the same preprocessing logic and task-specific feature engineering as the notebooks.
-
-### Train both models
+## Setup
 
 ```bash
-python -m src.train
+pip install pandas numpy scikit-learn xgboost lightgbm optuna matplotlib seaborn
 ```
 
-This creates:
-
-```text
-models/
-├── churn_model.joblib
-└── spend_model.joblib
-```
-
-### Run the API
-
-```bash
-uvicorn src.api:app --reload
-```
-
-`POST /predict` returns:
-
-```json
-{
-  "churn_probability": 0.72,
-  "churn_prediction": 1,
-  "monthly_spend_prediction_pln": 184.37
-}
-```
-
-The API never accepts either target as an input, so `churned` and `monthly_spend_pln` cannot leak into inference.
-
-### Regression target handling
-
-The source data contains three negative `monthly_spend_pln` values. These are excluded from regression training because negative customer spend is not a valid production target. The five extreme `2500 PLN` observations are retained so that the model is not artificially trained only on the easy part of the target distribution.
-
-The notebook's repeated cross-validation should remain the primary performance reference: the single holdout test split is optimistic because all extreme spend observations fall into the training set.
-
-## Technologies Used
-
-Languages & Core: Python, NumPy, pandas
-
-Modeling & Optimization: scikit-learn, XGBoost, Optuna
-
-Visualization: Matplotlib
----
-
-## Project Structure
-
-project/
-├── data/
-│   └── subscription_customers_dirty.csv
-├── models/
-│   ├── churn_model.joblib
-│   └── spend_model.joblib
-├── notebooks/
-│   ├── classification_model.ipynb
-│   └── regression_model.ipynb
-├── src/
-│   ├── api.py
-│   ├── predict.py
-│   ├── preprocessing.py
-│   └── train.py
-├── tests/
-│   └── test_api.py
-├── README.md
-└── requirements.txt
+Place `subscription_customers_dirty.csv` in a `data/` folder alongside the notebooks, then run either notebook top to bottom.
