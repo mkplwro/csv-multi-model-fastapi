@@ -8,7 +8,6 @@ Two end-to-end supervised learning projects built on a shared subscription-custo
 
 ## Project 1 — Monthly Spend Prediction (Regression)
 [regression_model.ipynb](./notebooks/regression_model.ipynb)
-[classification_model.ipynb](./notebooks/classification_model.ipynb)
 
 - **Goal:** predict a customer's monthly spend (PLN) from account and usage attributes.
 - **Approach:** systematic data cleaning (outlier and sentinel-value detection, with reasoning for each decision); six candidate models (Linear, Ridge, Lasso, Elastic Net, Decision Tree, XGBoost) compared via cross-validation and tuned with `GridSearchCV` / Optuna; final model chosen by CV performance rather than complexity.
@@ -16,7 +15,7 @@ Two end-to-end supervised learning projects built on a shared subscription-custo
 - **Notable finding:** a small group of customers with genuine zero spend accounts for a disproportionate share of total error; their profile is otherwise unremarkable, so this is reported as a clear model limitation rather than smoothed over.
 
 ## Project 2 — Churn Prediction (Classification)
-[`classification_model.ipynb`](./classification_model.ipynb)
+[classification_model.ipynb](./notebooks/classification_model.ipynb)
 
 - **Goal:** predict whether a customer will churn, prioritizing catching at-risk customers over avoiding false alarms.
 - **Approach:** stratified train/test split and cross-validation to handle ~81/19 class imbalance; eight models compared (including a dummy baseline) using Recall and F2 rather than accuracy; the leading model tuned with `RandomizedSearchCV`, with the classification threshold itself optimized for F2 rather than left at the default 0.5.
