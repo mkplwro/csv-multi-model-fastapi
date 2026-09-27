@@ -28,7 +28,7 @@ The project includes a lightweight Docker setup for running the saved machine-le
 
 ## Skills demonstrated
 
-Data cleaning & quality assessment · EDA & visualization · `scikit-learn` pipelines (`ColumnTransformer`, no leakage between train/test) · cross-validation & model selection · hyperparameter tuning (`GridSearchCV`, `RandomizedSearchCV`, Optuna) · imbalanced classification & threshold optimization · baseline comparison · error analysis & business interpretation · Containerization (Docker) 
+Data cleaning & quality assessment · EDA & visualization · `scikit-learn` pipelines (`ColumnTransformer`, no leakage between train/test) · cross-validation & model selection · hyperparameter tuning (`GridSearchCV`, `RandomizedSearchCV`, Optuna) · imbalanced classification & threshold optimization · baseline comparison · error analysis & business interpretation · containerization (docker) 
 
 ## Setup
 
