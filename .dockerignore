@@ -1,8 +1,11 @@
-data/
-notebooks/
-.git
 .gitignore
-.ipynb_checkpoints/
-__pycache__/
+.git
+.venv
+__pycache__
 *.pyc
+*.pyo
+*.pyd
+notebooks/
+data/
+.ipynb_checkpoints
 README.md

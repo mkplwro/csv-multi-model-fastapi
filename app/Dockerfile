@@ -1,7 +1,9 @@
 FROM python:3.11-slim
 WORKDIR /app
-COPY app/requirements_docker.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-COPY app/predict.py .
+COPY app/requirements_docker.txt .
+RUN pip install --no-cache-dir -r requirements_docker.txt
+COPY app/*.py .
 COPY models ./models
-CMD ["python", "predict.py"]
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+ 
